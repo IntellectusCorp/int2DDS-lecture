@@ -1,0 +1,12 @@
+<dds>
+  <types>
+    <!-- 같은 구조를 module 안에 두면 타입 이름이 lab::TilePressure가 되어 IDL pub와 매칭되지 않는다 -->
+    <module name="lab">
+      <struct name="TilePressure">
+        <member name="row"      type="int16"   key="true"/>
+        <member name="col"      type="int16"   key="true"/>
+        <member name="pressure" type="float32"/>
+      </struct>
+    </module>
+  </types>
+</dds>

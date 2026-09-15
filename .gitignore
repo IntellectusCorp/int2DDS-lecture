@@ -1,0 +1,32 @@
+# sdk/의 int2dds_ffi.dll · int2dds_ffi.dll.lib · int2dds-idl.exe는 수강생에게 주는 파일이라 커밋한다.
+# int2DDS의 .gitignore에 있는 *.dll · *.lib · *.exe · lib/ · **/bin/ 을 여기에 넣으면 SDK가 빠진다.
+
+# 빌드 결과물: dds-lecture-src/build (cmake -S . -B build),
+# VS Code CMake Tools는 열린 폴더(이 루트)의 build/에 만든다
+build/
+# Visual Studio "폴더 열기"의 CMake 출력
+out/
+
+# Office 잠금 파일 (PPT를 열어 둔 동안 생긴다: ~$int2dds-lecture.pptx)
+~$*
+
+# 에디터 · IDE
+.vs/
+.idea/
+.cache/
+compile_commands.json
+*.swp
+*.swo
+*~
+
+# OS
+Thumbs.db
+desktop.ini
+.DS_Store
+
+# AI 도구 로컬 파일 (int2DDS와 같게)
+CLAUDE.md
+.claude/
+.serena/
+
+*.log

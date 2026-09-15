@@ -1,0 +1,13 @@
+// Active Floor: 압력 센서 타일 격자
+struct TilePressure {
+    @key short row;
+    @key short col;
+    float pressure;
+};
+
+// (도전) 상태가 아닌 '사건'은 별도 토픽으로
+struct StepEvent {
+    short row;
+    short col;
+    long long ts_ms;
+};
