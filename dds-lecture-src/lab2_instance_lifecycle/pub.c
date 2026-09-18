@@ -6,7 +6,7 @@
  *   --events            StepEvent 토픽도 함께 발행 (도전)
  *   --no-wait           Reader 매칭을 기다리지 않는다 (late joiner 실험: 실습 8)
  *   --hold              Ctrl+C까지 남은 타일을 계속 쓴다
- *   --crash-after S     정리 없이 죽기 → 남은 타일이 NO_WRITERS가 되는 시점 관찰
+ *   --crash-after S     정리 없이 죽기 → 남은 타일이 NO_WRITERS가 되는 시점 관찰 (Participant lease, 약 100초 뒤)
  *   --profile Lib::Prof [--profile-file F]   Writer QoS를 프로파일로 (실습 8) */
 #include "lab.h"
 #include "shutdown.h"

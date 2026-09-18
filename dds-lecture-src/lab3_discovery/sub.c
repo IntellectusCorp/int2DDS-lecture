@@ -11,7 +11,8 @@ static void report(Int2DdsParticipant *dp, Int2DdsDataReader *reader) {
     uintptr_t count = 0;
     char list[16 * 10 + 1] = "";
     CHECK(int2dds_participant_get_discovered_participants(dp, handles, 16, &count));
-    for (uintptr_t i = 0; i < count; i++) {
+    /* count는 전체 수라 16을 넘을 수 있다: 배열에 받은 16개까지만 찍는다 */
+    for (uintptr_t i = 0; i < count && i < 16; i++) {
         char hx[9];
         lab_hex4(handles[i], hx);
         strcat(list, hx);

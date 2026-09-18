@@ -4,7 +4,7 @@
  *   --no-wait         (변형 3: 매칭 대기 없이 바로 write)
  *   --count N --period-ms N
  *   --hold            다 쓰고도 Ctrl+C까지 살아 있기 (실습 3·7)
- *   --crash-after S   S초 뒤 정리 없이 죽기 (실습 3: 정상 종료와 비교) */
+ *   --crash-after S   S초 뒤 정리 없이 죽기 (실습 3: 정상 종료와 비교, 상대는 약 100초 뒤 감지) */
 #include "lab.h"
 #include "shutdown.h"
 #include "hello.h"
