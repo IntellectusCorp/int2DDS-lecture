@@ -1,0 +1,86 @@
+[package]
+name = "int2dds-lecture-labs"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[lib]
+name = "lecture"
+path = "common/lib.rs"
+
+[dependencies]
+# 로컬 int2DDS 체크아웃. 다른 위치면 경로를 고치거나 git 의존성으로 바꾼다
+int2dds = { path = "../../int2DDS/dds" }
+# #[derive(DdsType)]이 만든 코드가 직접 참조한다
+speedy = "0.8"
+log = "0.4"
+clap = { version = "4.5", features = ["derive"] }
+ctrlc = { version = "3.4", features = ["termination"] }
+
+[[bin]]
+name = "lab1_pub"
+path = "lab1_hello/pub.rs"
+
+[[bin]]
+name = "lab1_sub"
+path = "lab1_hello/sub.rs"
+
+[[bin]]
+name = "lab2_pub"
+path = "lab2_instance_lifecycle/pub.rs"
+
+[[bin]]
+name = "lab2_sub"
+path = "lab2_instance_lifecycle/sub.rs"
+
+[[bin]]
+name = "lab3_sub"
+path = "lab3_discovery/sub.rs"
+
+[[bin]]
+name = "lab4_pub"
+path = "lab4_partition/pub.rs"
+
+[[bin]]
+name = "lab4_sub"
+path = "lab4_partition/sub.rs"
+
+[[bin]]
+name = "lab5_sub_read"
+path = "lab5_data_receive/sub_read.rs"
+
+[[bin]]
+name = "lab5_sub_listener"
+path = "lab5_data_receive/sub_listener.rs"
+
+[[bin]]
+name = "lab5_sub_waitset"
+path = "lab5_data_receive/sub_waitset.rs"
+
+[[bin]]
+name = "lab6_pub"
+path = "lab6_qos_compatibility/pub.rs"
+
+[[bin]]
+name = "lab6_sub"
+path = "lab6_qos_compatibility/sub.rs"
+
+[[bin]]
+name = "lab7_pub"
+path = "lab7_qos_test/pub.rs"
+
+[[bin]]
+name = "lab7_sub"
+path = "lab7_qos_test/sub.rs"
+
+[[bin]]
+name = "lab8_sub_xml"
+path = "lab8_xml/sub_xml.rs"
+
+[[bin]]
+name = "lab8_sub_profile"
+path = "lab8_xml/sub_profile.rs"
+
+[[bin]]
+name = "lab8_sub_config"
+path = "lab8_xml/sub_config.rs"
