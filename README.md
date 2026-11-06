@@ -19,7 +19,7 @@ int2DDS-lecture/
 │  ├─ lab6_qos_compatibility/          pub.rs, sub.rs
 │  ├─ lab7_qos_test/                   pub.rs, sub.rs, recipes.rs
 │  ├─ lab8_xml/                        sub_xml.rs, sub_profile.rs, sub_config.rs, *.xml
-│  └─ board/                           board_pub.rs, board_sub.rs, board.xml, led.py (Raspberry Pi)
+│  └─ board/                           board_pub.rs, board_sub.rs, board.xml, led.py, unoq_led/ (Arduino UNO Q)
 ```
 
 이전 C 실습 코드(`dds-lecture-src/`)는 삭제했습니다. 필요하면 git 기록에서 꺼낼 수 있습니다.
@@ -39,7 +39,7 @@ int2DDS-lecture/
 
 실습은 두 갈래로 이어집니다. HelloWorld(키 없음)는 실습 1 → 3 → 4 → 6 → 7, TilePressure(복합 키)는 실습 2 → 5 → 8입니다.
 
-실습 2 · 4 · 7은 Raspberry Pi에서 LED로도 확인합니다(`board/`, [보드 실습](#보드-실습-raspberry-pi)). 보드에서는 다시 빌드하지 않고 `board.xml`만 고칩니다.
+실습 2 · 4 · 7은 Arduino UNO Q에서 LED로도 확인합니다(`board/`, [보드 실습](#보드-실습-arduino-uno-q)). 보드에서는 다시 빌드하지 않고 `board.xml`만 고칩니다.
 
 ## 준비물
 
@@ -380,9 +380,9 @@ pub은 `lab2_pub`입니다.
 - 2 · 3단계에서 pub은 약 2.5초에 (1,1)을 dispose하고 (1,2)를 unregister합니다. 그래서 늦게 붙은 sub에는 `NOT_ALIVE_DISPOSED (valid_data=false)` 두 줄과 **(2,1), (2,2)의 값만** 옵니다.
 - 4개를 다 보려면 pub에 `--cycles 100`을 더해 dispose를 50초 뒤로 미룹니다.
 
-### 보드 실습 (Raspberry Pi)
+### 보드 실습 (Arduino UNO Q)
 
-DDS와 QoS는 Rust 프로그램(`board_pub`, `board_sub`)이 맡고, Python(`led.py`)은 `board_sub`가 내보내는 `led N on 밝기|off|blink|fast` 줄을 GPIO LED로 옮기기만 합니다. 타입 · QoS · Partition · Domain은 모두 `board.xml`에 있어서, **동작을 바꿀 때는 `board.xml`만 고치고 다시 실행**합니다. Pi에서는 빌드하지 않습니다.
+DDS와 QoS는 Rust 프로그램(`board_pub`, `board_sub`)이 맡고, Python(`led.py`)은 `board_sub`가 내보내는 `led N on 밝기|off|blink|fast` 줄을 보드의 내장 LED 매트릭스로 옮기기만 합니다. 타입 · QoS · Partition · Domain은 모두 `board.xml`에 있어서, **동작을 바꿀 때는 `board.xml`만 고치고 다시 실행**합니다. 보드에서는 빌드하지 않습니다.
 
 | 역할 | 프로그램 | `board.xml` 안의 이름 |
 |---|---|---|
@@ -391,7 +391,10 @@ DDS와 QoS는 Rust 프로그램(`board_pub`, `board_sub`)이 맡고, Python(`led
 
 **준비 (처음 한 번)**
 
-1. PC(WSL Ubuntu)에서 aarch64용으로 빌드합니다. 아직 확인하지 않은 절차입니다.
+아직 보드에서 실행해 보지 않은 절차입니다. `led.py`가 프레임을 보내는 부분만 PC에서 가짜 arduino-router 소켓으로 확인했습니다.
+
+1. 보드 첫 설정: USB-C로 PC에 연결하고 Arduino App Lab에서 보드 이름 · Wi-Fi · 비밀번호를 정합니다. 그 뒤에는 `ssh arduino@<보드이름>.local`로 들어갑니다(USB로는 `adb shell`).
+2. PC(WSL Ubuntu)에서 aarch64용으로 빌드합니다.
    ```bash
    rustup target add aarch64-unknown-linux-gnu
    sudo apt install -y gcc-aarch64-linux-gnu
@@ -399,11 +402,13 @@ DDS와 QoS는 Rust 프로그램(`board_pub`, `board_sub`)이 맡고, Python(`led
    export CC_aarch64_unknown_linux_gnu=aarch64-linux-gnu-gcc
    cargo build --release --target aarch64-unknown-linux-gnu --bin board_pub --bin board_sub
    ```
-2. 각 Pi의 `~/lab`에 네 파일을 복사합니다: `target/aarch64-unknown-linux-gnu/release/board_pub`, `board_sub`, `board/board.xml`, `board/led.py`.
-3. Display Pi에 `gpiozero`가 없으면 `sudo apt install -y python3-gpiozero`.
-4. 팀마다 `board.xml`의 `domain_id`를 하나 정하고, 팀의 Pi는 모두 같은 값으로 둡니다. 같은 Wi-Fi에서 다른 팀 LED와 섞이지 않게 하는 유일한 장치입니다(보드 프로그램에는 `--domain`이 없습니다).
+3. 각 보드의 `~/lab`에 네 파일을 복사합니다: `target/aarch64-unknown-linux-gnu/release/board_pub`, `board_sub`, `board/board.xml`, `board/led.py`.
+4. Display 보드에 LED 스케치를 올립니다. `board/unoq_led` 폴더를 보드의 `~/ArduinoApps/`에 복사하고 App Lab에서 `int2DDS Board LED` 앱을 실행합니다(보드에서 `arduino-app-cli app start ~/ArduinoApps/unoq_led`로도 됩니다).
+   - 헤더 핀과 LED 매트릭스는 Linux가 아니라 MCU(STM32)가 제어합니다. 그래서 `led.py`가 arduino-router 소켓(`/var/run/arduino-router.sock`)으로 스케치의 `draw`를 부릅니다.
+   - 스케치는 받은 프레임을 그리기만 해서 한 번 올리면 고칠 일이 없습니다. 다른 앱을 실행하면 스케치가 바뀌므로 그때는 이 앱을 다시 실행합니다.
+5. 팀마다 `board.xml`의 `domain_id`를 하나 정하고, 팀의 보드는 모두 같은 값으로 둡니다. 같은 Wi-Fi에서 다른 팀 LED와 섞이지 않게 하는 유일한 장치입니다(보드 프로그램에는 `--domain`이 없습니다).
 
-**배선 (Display Pi)**: LED 0 · 1 · 2 · 3 ← BCM 17 · 27 · 22 · 23, LED마다 330Ω 저항을 직렬로 달고 반대쪽은 GND. 타일 (1,1)(1,2)(2,1)(2,2)가 LED 0 · 1 · 2 · 3입니다. 다른 핀은 `led.py --pins a,b,c,d`.
+**LED (Display 보드)**: 배선은 없습니다. 내장 LED 매트릭스(8×13)를 네 구역으로 나눠 타일 (1,1)(1,2)(2,1)(2,2) = LED 0 · 1 · 2 · 3을 왼쪽 위 · 오른쪽 위 · 왼쪽 아래 · 오른쪽 아래에 표시합니다. 같은 내용이 터미널에도 `LED  [0] on 0.80 …`으로 찍힙니다.
 
 | LED | 뜻 |
 |---|---|
@@ -416,7 +421,7 @@ DDS와 QoS는 Rust 프로그램(`board_pub`, `board_sub`)이 맡고, Python(`led
 |---|---|
 | `board_pub` | `--config` (board.xml), `--participant` (Board::Sensor), `--writer` (pub::tile), `--tiles` (11,12,21,22), `--pressure` (80), `--period-ms` (500), `--count` (0 = 계속), `--dispose-after` S, `--crash-after` S |
 | `board_sub` | `--config` (board.xml), `--participant` (Board::Display), `--reader` (sub::tile) |
-| `led.py` | `--pins` (17,27,22,23), `--text` (GPIO 없이 글자로) |
+| `led.py` | `--text` (매트릭스 없이 글자로만), `--socket` (/var/run/arduino-router.sock) |
 
 보드 없이 PC에서 연습할 때는 `dds-lecture-rs`에서 아래처럼 실행합니다. 아래 기대 출력은 모두 PC에서 이 방법으로 확인했습니다.
 
@@ -441,20 +446,20 @@ board_pub --config board/board.xml                                          # Se
 **실습 4 · 보드**
 
 - Display의 `<subscriber_qos>` 안 `<element>`를 `floor-2`로 → `matched writers=0`. `floor-*`로 → 붙음. 와일드카드는 Display(Subscriber) 쪽에만 씁니다. int2DDS는 Publisher 쪽 와일드카드로 `*` 하나만 받습니다.
-- 한쪽 Pi의 `domain_id`만 1로 → 서로 보이지 않음.
+- 한쪽 보드의 `domain_id`만 1로 → 서로 보이지 않음.
 
 **실습 7 · 보드** (`base_name`의 `Recipe::Basic`을 바꿈)
 
 | 단계 | 고칠 곳 | 실행 | 기대 LED |
 |---|---|---|---|
-| A · Late Joiner | 두 Pi 모두 `Recipe::HardState` | Sensor `./board_pub --count 1`, 5초 뒤 Display | 4개 켜짐 (Basic이면 꺼진 채) |
-| B · 헬스 | 두 Pi 모두 `Recipe::Health` | Display 먼저, Sensor `./board_pub --count 6` → 이어서 Sensor 전원 뽑기 | 쓰기가 멈추면 빠른 깜빡, 전원을 뽑으면 2초 뒤 느린 깜빡 |
-| C · Failover | 모두 `Recipe::Failover`, Sensor B만 `<ownership_strength><value>50</value>` | Pi 1: `./board_pub --pressure 100`, Pi 2: Display와 `./board_pub --pressure 30` → Pi 1 전원 뽑기 | 1초 뒤 1.00 → 0.30 |
+| A · Late Joiner | 두 보드 모두 `Recipe::HardState` | Sensor `./board_pub --count 1`, 5초 뒤 Display | 4개 켜짐 (Basic이면 꺼진 채) |
+| B · 헬스 | 두 보드 모두 `Recipe::Health` | Display 먼저, Sensor `./board_pub --count 6` → 이어서 Sensor 전원 뽑기 | 쓰기가 멈추면 빠른 깜빡, 전원을 뽑으면 2초 뒤 느린 깜빡 |
+| C · Failover | 모두 `Recipe::Failover`, Sensor B만 `<ownership_strength><value>50</value>` | 보드 1: `./board_pub --pressure 100`, 보드 2: Display와 `./board_pub --pressure 30` → 보드 1 전원 뽑기 | 1초 뒤 1.00 → 0.30 |
 | D · 불일치 | Display의 `datareader_qos`만 `Recipe::HardState` | Display, Sensor | sub 로그 `REQUESTED_INCOMPATIBLE_QOS: last_policy=DURABILITY` |
 
 적용된 값은 시작 줄 `pub ready (board.xml): …`, `sub ready (board.xml): …`에서 확인합니다.
 
-**통합 실습 (선택) · 정답 예시**: `Recipe`에 아래 프로파일을 더하고, 모든 Pi의 `base_name`을 `Recipe::Field`로 바꿉니다(Sensor B만 strength 50).
+**통합 실습 (선택) · 정답 예시**: `Recipe`에 아래 프로파일을 더하고, 모든 보드의 `base_name`을 `Recipe::Field`로 바꿉니다(Sensor B만 strength 50).
 
 ```xml
 <qos_profile name="Field">
@@ -497,7 +502,10 @@ Sensor A `./board_pub --pressure 100`, Sensor B `./board_pub --pressure 30 --cou
 | 강제 종료 뒤 NO_WRITERS가 안 옴 | 기본 lease가 100초 | 기다리거나 실습 7 B · C로 대체 |
 | 로그 두 줄이 한 줄에 섞임 | 콜백 스레드와 메인 스레드가 동시에 출력 | 표시 문제일 뿐 동작과는 무관 |
 | 다른 PC와 통신이 안 됨 | Windows 방화벽이 UDP를 막음 | 방화벽에서 실습 exe의 UDP 허용 |
-| Pi끼리(Wi-Fi) 서로 안 보임 | 공유기가 멀티캐스트를 막거나 AP(클라이언트) 격리가 켜짐 | 격리 끄기 · 같은 공유기 사용. 멀티캐스트만 막혔으면 `INT2DDS_INITIAL_PEERS=상대IP`로 SPDP를 유니캐스트로도 보냄(포트 생략 = 7400, domain d면 `상대IP:7400+250×d`). 코드를 보고 쓴 것이고 아직 확인하지 않음. 격리가 켜져 있으면 이것으로도 안 됨 |
+| 보드끼리(Wi-Fi) 서로 안 보임 | 공유기가 멀티캐스트를 막거나 AP(클라이언트) 격리가 켜짐 | 격리 끄기 · 같은 공유기 사용. 멀티캐스트만 막혔으면 `INT2DDS_INITIAL_PEERS=상대IP`로 SPDP를 유니캐스트로도 보냄(포트 생략 = 7400, domain d면 `상대IP:7400+250×d`). 코드를 보고 쓴 것이고 아직 확인하지 않음. 격리가 켜져 있으면 이것으로도 안 됨 |
+| `매트릭스: draw 호출 실패 …` | 스케치가 MCU에 없음 (다른 앱이 실행 중) | `unoq_led` 앱을 다시 실행 |
+| `매트릭스: 소켓 권한이 없다` | 사용자가 `arduino-router` 그룹이 아님 | `sudo usermod -aG arduino-router $USER` 뒤 다시 로그인 |
+| `arduino-router 소켓(…)이 없어 글자로만 표시한다` | UNO Q가 아니거나 arduino-router가 꺼져 있음 | PC에서는 정상. 보드에서는 arduino-router 서비스가 떠 있는지 확인 |
 | 다른 팀 LED가 같이 움직임 | 팀끼리 `board.xml`의 `domain_id`가 같음 | 팀마다 다른 `domain_id` |
 
 ## 라이선스
