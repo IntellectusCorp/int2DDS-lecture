@@ -841,6 +841,7 @@ dependencies = [
 [[package]]
 name = "int2dds"
 version = "0.1.8"
+source = "git+https://github.com/IntellectusCorp/int2DDS.git?branch=develop#aed6bb835646416774343ca80aff151d1df7181e"
 dependencies = [
  "arc-swap",
  "bitflags 2.13.2",
@@ -891,6 +892,7 @@ dependencies = [
 [[package]]
 name = "int2dds-derive"
 version = "0.1.8"
+source = "git+https://github.com/IntellectusCorp/int2DDS.git?branch=develop#aed6bb835646416774343ca80aff151d1df7181e"
 dependencies = [
  "md5",
  "proc-macro2",

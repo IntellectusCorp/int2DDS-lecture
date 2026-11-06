@@ -9,8 +9,8 @@ name = "lecture"
 path = "common/lib.rs"
 
 [dependencies]
-# 로컬 int2DDS 체크아웃. 다른 위치면 경로를 고치거나 git 의존성으로 바꾼다
-int2dds = { path = "../../int2DDS/dds" }
+# develop 브랜치. 실제로 쓰는 커밋은 Cargo.lock이 고정하고, cargo update -p int2dds로 올린다
+int2dds = { git = "https://github.com/IntellectusCorp/int2DDS.git", branch = "develop" }
 # #[derive(DdsType)]이 만든 코드가 직접 참조한다
 speedy = "0.8"
 log = "0.4"
@@ -84,3 +84,11 @@ path = "lab8_xml/sub_profile.rs"
 [[bin]]
 name = "lab8_sub_config"
 path = "lab8_xml/sub_config.rs"
+
+[[bin]]
+name = "board_pub"
+path = "board/board_pub.rs"
+
+[[bin]]
+name = "board_sub"
+path = "board/board_sub.rs"

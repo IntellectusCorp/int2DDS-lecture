@@ -9,7 +9,7 @@ int2DDS-lecture/
 ├─ int2dds-lecture-for-beginner.pptx   강의 슬라이드 (3일 과정, Rust)
 ├─ int2dds-lecture.pptx                이전 2일 과정 슬라이드 (C 기준)
 ├─ dds-lecture-rs/                     실습 코드 (Rust)
-│  ├─ Cargo.toml                       실습 프로그램 17개 ([[bin]])
+│  ├─ Cargo.toml                       실습 프로그램 19개 ([[bin]])
 │  ├─ common/                          lib.rs, lab.rs (공통 헬퍼), shutdown.rs (Ctrl+C 종료 처리)
 │  ├─ lab1_hello/                      hello.idl, hello.rs (생성), pub.rs, sub.rs
 │  ├─ lab2_instance_lifecycle/         floor.idl, floor.rs (생성), pub.rs, sub.rs
@@ -18,9 +18,11 @@ int2DDS-lecture/
 │  ├─ lab5_data_receive/               sub_read.rs, sub_listener.rs, sub_waitset.rs
 │  ├─ lab6_qos_compatibility/          pub.rs, sub.rs
 │  ├─ lab7_qos_test/                   pub.rs, sub.rs, recipes.rs
-│  └─ lab8_xml/                        sub_xml.rs, sub_profile.rs, sub_config.rs, *.xml
-└─ dds-lecture-src/                    이전 C 실습 코드 (Rust 전환 후 삭제 예정)
+│  ├─ lab8_xml/                        sub_xml.rs, sub_profile.rs, sub_config.rs, *.xml
+│  └─ board/                           board_pub.rs, board_sub.rs, board.xml, led.py (Raspberry Pi)
 ```
+
+이전 C 실습 코드(`dds-lecture-src/`)는 삭제했습니다. 필요하면 git 기록에서 꺼낼 수 있습니다.
 
 ### 실습 목록
 
@@ -37,11 +39,15 @@ int2DDS-lecture/
 
 실습은 두 갈래로 이어집니다. HelloWorld(키 없음)는 실습 1 → 3 → 4 → 6 → 7, TilePressure(복합 키)는 실습 2 → 5 → 8입니다.
 
+실습 2 · 4 · 7은 Raspberry Pi에서 LED로도 확인합니다(`board/`, [보드 실습](#보드-실습-raspberry-pi)). 보드에서는 다시 빌드하지 않고 `board.xml`만 고칩니다.
+
 ## 준비물
 
-- Windows 10/11 x64. Linux x86_64(WSL Ubuntu)에서도 같은 명령으로 빌드되고 실습 1이 동작하는 것을 확인했습니다. aarch64(보드)는 아직 확인하지 않았습니다.
+- Windows 10/11 x64. Linux x86_64(WSL Ubuntu)에서도 같은 명령으로 빌드되고 실습 1이 동작하는 것을 확인했습니다. aarch64(보드) 크로스 빌드는 아직 확인하지 않았습니다. 보드 프로그램은 PC에서 `--text`로 확인했습니다.
 - Rust 1.89 이상: [rustup](https://rustup.rs)으로 설치합니다. Windows에서는 MSVC 링커가 필요해서 Visual Studio 2022 Build Tools("C++를 사용한 데스크톱 개발" 워크로드)도 설치합니다.
-- int2DDS 소스: `Cargo.toml`이 `../../int2DDS/dds`를 경로 의존성으로 씁니다. `int2DDS-lecture`와 `int2DDS`를 같은 폴더에 나란히 둡니다. 위치가 다르면 `Cargo.toml`의 `int2dds = { path = ... }`를 고칩니다.
+- Git: `Cargo.toml`이 int2DDS를 [GitHub](https://github.com/IntellectusCorp/int2DDS)의 `develop` 브랜치에서 받습니다. 따로 clone할 필요는 없고 첫 빌드 때 cargo가 받아 옵니다(인터넷 필요).
+  - 실제로 쓰는 커밋은 `Cargo.lock`에 고정됩니다. 그래서 develop이 바뀌어도 수강생마다 같은 버전으로 빌드됩니다.
+  - 최신 develop으로 올릴 때는 `cargo update -p int2dds`를 실행하고, 실습을 다시 확인한 뒤 `Cargo.lock`을 커밋합니다.
 - 실습 3 · 4에서 패킷을 볼 때: Wireshark (Npcap loopback 어댑터 포함)
 
 ## 빌드
@@ -51,7 +57,7 @@ cd dds-lecture-rs
 cargo build --release
 ```
 
-- 결과물은 `target\release\`에 생깁니다. `lab*.exe` 17개입니다. 처음 빌드는 의존성까지 컴파일해서 몇 분 걸립니다.
+- 결과물은 `target\release\`에 생깁니다. `lab*.exe` 17개와 `board_pub.exe` · `board_sub.exe`입니다. 처음 빌드는 의존성까지 컴파일해서 몇 분 걸립니다.
 - 하나만 빌드할 때: `cargo build --release --bin lab1_pub`
 - 고친 뒤에는 같은 명령을 다시 실행하면 바뀐 것만 다시 빌드합니다.
 
@@ -61,7 +67,7 @@ cargo build --release
 
 ```powershell
 # 생성기를 한 번 설치해 둔다 (~\.cargo\bin\int2dds-idl.exe)
-cargo install --path ..\..\int2DDS\idl
+cargo install --git https://github.com/IntellectusCorp/int2DDS.git --branch develop int2dds-idl
 int2dds-idl -r lab1_hello\hello.rs lab1_hello\hello.idl
 int2dds-idl -r lab2_instance_lifecycle\floor.rs lab2_instance_lifecycle\floor.idl
 ```
@@ -124,7 +130,7 @@ Domain ID는 0~232만 됩니다(포트 공식 7400 + 250·d). Windows는 예약�
 
 기본적으로 sub를 먼저 띄웁니다. **실습 7 A와 실습 8의 2 · 3단계만 pub이 먼저**입니다(늦게 참여하는 쪽을 보는 실험).
 
-기대 출력은 Windows 11에서 int2DDS 0.1.8(develop, 커밋 `60c5b3a8`)로 실행한 결과입니다. **(미확인)** 표시는 직접 실행해 보지 않은, 코드 기준의 예상 동작입니다.
+기대 출력은 Windows 11에서 int2DDS 0.1.8(develop, 커밋 `60c5b3a8`)로 실행한 결과입니다. 현재 `Cargo.lock`의 커밋 `aed6bb83`에서는 실습 1 · 2 · 4 · 6(변경 불가) · 7 C · 8 1'을 다시 실행해 같은 결과를 확인했습니다. **(미확인)** 표시는 직접 실행해 보지 않은, 코드 기준의 예상 동작입니다.
 
 ### 실습 1 · HelloWorld
 
@@ -374,11 +380,113 @@ pub은 `lab2_pub`입니다.
 - 2 · 3단계에서 pub은 약 2.5초에 (1,1)을 dispose하고 (1,2)를 unregister합니다. 그래서 늦게 붙은 sub에는 `NOT_ALIVE_DISPOSED (valid_data=false)` 두 줄과 **(2,1), (2,2)의 값만** 옵니다.
 - 4개를 다 보려면 pub에 `--cycles 100`을 더해 dispose를 50초 뒤로 미룹니다.
 
+### 보드 실습 (Raspberry Pi)
+
+DDS와 QoS는 Rust 프로그램(`board_pub`, `board_sub`)이 맡고, Python(`led.py`)은 `board_sub`가 내보내는 `led N on 밝기|off|blink|fast` 줄을 GPIO LED로 옮기기만 합니다. 타입 · QoS · Partition · Domain은 모두 `board.xml`에 있어서, **동작을 바꿀 때는 `board.xml`만 고치고 다시 실행**합니다. Pi에서는 빌드하지 않습니다.
+
+| 역할 | 프로그램 | `board.xml` 안의 이름 |
+|---|---|---|
+| Sensor (타일 4개를 씀) | `board_pub` | `Board::Sensor` / `pub::tile` |
+| Display (받은 상태를 LED로) | `board_sub \| python3 led.py` | `Board::Display` / `sub::tile` |
+
+**준비 (처음 한 번)**
+
+1. PC(WSL Ubuntu)에서 aarch64용으로 빌드합니다. 아직 확인하지 않은 절차입니다.
+   ```bash
+   rustup target add aarch64-unknown-linux-gnu
+   sudo apt install -y gcc-aarch64-linux-gnu
+   export CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER=aarch64-linux-gnu-gcc
+   export CC_aarch64_unknown_linux_gnu=aarch64-linux-gnu-gcc
+   cargo build --release --target aarch64-unknown-linux-gnu --bin board_pub --bin board_sub
+   ```
+2. 각 Pi의 `~/lab`에 네 파일을 복사합니다: `target/aarch64-unknown-linux-gnu/release/board_pub`, `board_sub`, `board/board.xml`, `board/led.py`.
+3. Display Pi에 `gpiozero`가 없으면 `sudo apt install -y python3-gpiozero`.
+4. 팀마다 `board.xml`의 `domain_id`를 하나 정하고, 팀의 Pi는 모두 같은 값으로 둡니다. 같은 Wi-Fi에서 다른 팀 LED와 섞이지 않게 하는 유일한 장치입니다(보드 프로그램에는 `--domain`이 없습니다).
+
+**배선 (Display Pi)**: LED 0 · 1 · 2 · 3 ← BCM 17 · 27 · 22 · 23, LED마다 330Ω 저항을 직렬로 달고 반대쪽은 GND. 타일 (1,1)(1,2)(2,1)(2,2)가 LED 0 · 1 · 2 · 3입니다. 다른 핀은 `led.py --pins a,b,c,d`.
+
+| LED | 뜻 |
+|---|---|
+| 켜짐 (밝기 = pressure / 100) | ALIVE |
+| 꺼짐 | NOT_ALIVE_DISPOSED |
+| 느린 깜빡 | NOT_ALIVE_NO_WRITERS (Writer가 떠남 · LIVELINESS 만료) |
+| 빠른 깜빡 | REQUESTED_DEADLINE_MISSED (갱신이 끊김) |
+
+| 프로그램 | 인자 (기본) |
+|---|---|
+| `board_pub` | `--config` (board.xml), `--participant` (Board::Sensor), `--writer` (pub::tile), `--tiles` (11,12,21,22), `--pressure` (80), `--period-ms` (500), `--count` (0 = 계속), `--dispose-after` S, `--crash-after` S |
+| `board_sub` | `--config` (board.xml), `--participant` (Board::Display), `--reader` (sub::tile) |
+| `led.py` | `--pins` (17,27,22,23), `--text` (GPIO 없이 글자로) |
+
+보드 없이 PC에서 연습할 때는 `dds-lecture-rs`에서 아래처럼 실행합니다. 아래 기대 출력은 모두 PC에서 이 방법으로 확인했습니다.
+
+```powershell
+cmd /c "board_sub --config board/board.xml | python board/led.py --text"   # Display
+board_pub --config board/board.xml                                          # Sensor (다른 터미널)
+```
+
+- Windows PowerShell 5.1은 프로그램끼리의 파이프 출력을 앞 프로그램이 끝날 때까지 모아 둡니다. 그래서 `cmd /c`로 감쌉니다(cmd · bash에서는 바로 보입니다).
+- 실습 7 · 통합 실습처럼 XML을 고칠 때는 `board/board.xml`을 복사해 고치고 `--config`로 그 파일을 줍니다. Sensor를 둘 띄울 때는 파일도 둘입니다.
+
+**실습 2 · 보드** (`board.xml` 그대로, Display 먼저)
+
+| Sensor | 기대 LED |
+|---|---|
+| `./board_pub` | 4개 켜짐 0.80 |
+| `./board_pub --pressure 30` | 0.30 |
+| `./board_pub --dispose-after 5` | 5초 뒤 꺼짐 |
+| 실행 중 Ctrl+C | 바로 느린 깜빡 |
+| 실행 중 전원 뽑기 (`--crash-after 5`로 대신 가능) | 약 100초 동안 켜진 채, 그 뒤 느린 깜빡 (Participant lease) |
+
+**실습 4 · 보드**
+
+- Display의 `<subscriber_qos>` 안 `<element>`를 `floor-2`로 → `matched writers=0`. `floor-*`로 → 붙음. 와일드카드는 Display(Subscriber) 쪽에만 씁니다. int2DDS는 Publisher 쪽 와일드카드로 `*` 하나만 받습니다.
+- 한쪽 Pi의 `domain_id`만 1로 → 서로 보이지 않음.
+
+**실습 7 · 보드** (`base_name`의 `Recipe::Basic`을 바꿈)
+
+| 단계 | 고칠 곳 | 실행 | 기대 LED |
+|---|---|---|---|
+| A · Late Joiner | 두 Pi 모두 `Recipe::HardState` | Sensor `./board_pub --count 1`, 5초 뒤 Display | 4개 켜짐 (Basic이면 꺼진 채) |
+| B · 헬스 | 두 Pi 모두 `Recipe::Health` | Display 먼저, Sensor `./board_pub --count 6` → 이어서 Sensor 전원 뽑기 | 쓰기가 멈추면 빠른 깜빡, 전원을 뽑으면 2초 뒤 느린 깜빡 |
+| C · Failover | 모두 `Recipe::Failover`, Sensor B만 `<ownership_strength><value>50</value>` | Pi 1: `./board_pub --pressure 100`, Pi 2: Display와 `./board_pub --pressure 30` → Pi 1 전원 뽑기 | 1초 뒤 1.00 → 0.30 |
+| D · 불일치 | Display의 `datareader_qos`만 `Recipe::HardState` | Display, Sensor | sub 로그 `REQUESTED_INCOMPATIBLE_QOS: last_policy=DURABILITY` |
+
+적용된 값은 시작 줄 `pub ready (board.xml): …`, `sub ready (board.xml): …`에서 확인합니다.
+
+**통합 실습 (선택) · 정답 예시**: `Recipe`에 아래 프로파일을 더하고, 모든 Pi의 `base_name`을 `Recipe::Field`로 바꿉니다(Sensor B만 strength 50).
+
+```xml
+<qos_profile name="Field">
+  <datawriter_qos>
+    <reliability><kind>RELIABLE_RELIABILITY_QOS</kind></reliability>
+    <durability><kind>TRANSIENT_LOCAL_DURABILITY_QOS</kind></durability>
+    <history><kind>KEEP_LAST_HISTORY_QOS</kind><depth>1</depth></history>
+    <deadline><period><sec>0</sec><nanosec>500000000</nanosec></period></deadline>
+    <liveliness><kind>AUTOMATIC_LIVELINESS_QOS</kind><lease_duration><sec>1</sec><nanosec>0</nanosec></lease_duration></liveliness>
+    <ownership><kind>EXCLUSIVE_OWNERSHIP_QOS</kind></ownership>
+  </datawriter_qos>
+  <datareader_qos>
+    <reliability><kind>RELIABLE_RELIABILITY_QOS</kind></reliability>
+    <durability><kind>TRANSIENT_LOCAL_DURABILITY_QOS</kind></durability>
+    <history><kind>KEEP_LAST_HISTORY_QOS</kind><depth>1</depth></history>
+    <deadline><period><sec>1</sec><nanosec>0</nanosec></period></deadline>
+    <liveliness><kind>AUTOMATIC_LIVELINESS_QOS</kind><lease_duration><sec>1</sec><nanosec>0</nanosec></lease_duration></liveliness>
+    <ownership><kind>EXCLUSIVE_OWNERSHIP_QOS</kind></ownership>
+  </datareader_qos>
+</qos_profile>
+```
+
+Sensor A `./board_pub --pressure 100`, Sensor B `./board_pub --pressure 30 --count 40`, 몇 초 뒤 Display를 켭니다. 바로 1.00 → A 전원을 뽑으면 0.30 → B가 다 쓰고 멈추면 빠른 깜빡 → B 전원을 뽑으면 느린 깜빡.
+
+- 정책은 `Field` 안에 모두 적습니다. 빠뜨린 정책은 기본값이 됩니다(Reader 기본 reliability는 BEST_EFFORT).
+- `Field`의 `datawriter_qos`에 `base_name="Recipe::HardState"`를 달아 상속하면 int2DDS develop에서는 적은 정책까지 모두 기본값이 됩니다. 쓰지 않습니다.
+
 ## 문제 해결
 
 | 증상 | 원인 | 조치 |
 |---|---|---|
-| `failed to load source for dependency int2dds` | `../../int2DDS`가 없음 | int2DDS를 `int2DDS-lecture` 옆에 두거나 `Cargo.toml`의 경로 수정 |
+| `failed to load source for dependency int2dds` | GitHub에 접속하지 못함 (프록시 · 방화벽) | 인터넷 연결 확인. 사내망이면 `CARGO_NET_GIT_FETCH_WITH_CLI=true`로 시스템 git 설정을 쓰게 함 |
 | `link.exe not found` | MSVC 링커 없음 | Visual Studio 2022 Build Tools 설치 |
 | `lab1_sub`를 인식하지 못함 | 그 창에서 PATH 줄을 치지 않음 | PATH 줄 실행 또는 `.\target\release\lab1_sub.exe` |
 | 빌드 직후 첫 실행이 몇 초 멈춤 | Windows Defender 첫 실행 검사(추정) | 한 번 더 실행하거나 `target\`을 검사 예외에 추가 |
@@ -389,6 +497,8 @@ pub은 `lab2_pub`입니다.
 | 강제 종료 뒤 NO_WRITERS가 안 옴 | 기본 lease가 100초 | 기다리거나 실습 7 B · C로 대체 |
 | 로그 두 줄이 한 줄에 섞임 | 콜백 스레드와 메인 스레드가 동시에 출력 | 표시 문제일 뿐 동작과는 무관 |
 | 다른 PC와 통신이 안 됨 | Windows 방화벽이 UDP를 막음 | 방화벽에서 실습 exe의 UDP 허용 |
+| Pi끼리(Wi-Fi) 서로 안 보임 | 공유기가 멀티캐스트를 막거나 AP(클라이언트) 격리가 켜짐 | 격리 끄기 · 같은 공유기 사용. 멀티캐스트만 막혔으면 `INT2DDS_INITIAL_PEERS=상대IP`로 SPDP를 유니캐스트로도 보냄(포트 생략 = 7400, domain d면 `상대IP:7400+250×d`). 코드를 보고 쓴 것이고 아직 확인하지 않음. 격리가 켜져 있으면 이것으로도 안 됨 |
+| 다른 팀 LED가 같이 움직임 | 팀끼리 `board.xml`의 `domain_id`가 같음 | 팀마다 다른 `domain_id` |
 
 ## 라이선스
 

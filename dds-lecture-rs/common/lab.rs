@@ -41,6 +41,15 @@ pub fn ms(x: i64) -> Duration {
     Duration::from_millis(x)
 }
 
+/// QoS Duration → "500ms" / "inf"
+pub fn dur(d: Duration) -> String {
+    if d.is_infinite() {
+        "inf".into()
+    } else {
+        format!("{}ms", d.as_millis())
+    }
+}
+
 pub fn instance_state(s: InstanceStateKind) -> &'static str {
     if s == InstanceStateKind::ALIVE_INSTANCE_STATE {
         "ALIVE"

@@ -1,0 +1,111 @@
+<dds>
+  <!-- 보드 실습: 이 파일만 고치고 다시 실행한다 (재빌드 없음) -->
+  <types>
+    <struct name="TilePressure">
+      <member name="row"      type="int16"   key="true"/>
+      <member name="col"      type="int16"   key="true"/>
+      <member name="pressure" type="float32"/>
+    </struct>
+  </types>
+
+  <!-- 1. QoS 레시피: 아래 Participant의 base_name을 바꿔 끼운다 -->
+  <qos_library name="Recipe">
+    <qos_profile name="Basic">
+      <datawriter_qos>
+        <reliability><kind>RELIABLE_RELIABILITY_QOS</kind></reliability>
+      </datawriter_qos>
+      <datareader_qos>
+        <reliability><kind>RELIABLE_RELIABILITY_QOS</kind></reliability>
+      </datareader_qos>
+    </qos_profile>
+
+    <!-- Late Joiner: 나중에 켠 Display도 마지막 값을 받는다 -->
+    <qos_profile name="HardState">
+      <datawriter_qos>
+        <reliability><kind>RELIABLE_RELIABILITY_QOS</kind></reliability>
+        <durability><kind>TRANSIENT_LOCAL_DURABILITY_QOS</kind></durability>
+        <history><kind>KEEP_LAST_HISTORY_QOS</kind><depth>1</depth></history>
+      </datawriter_qos>
+      <datareader_qos>
+        <reliability><kind>RELIABLE_RELIABILITY_QOS</kind></reliability>
+        <durability><kind>TRANSIENT_LOCAL_DURABILITY_QOS</kind></durability>
+        <history><kind>KEEP_LAST_HISTORY_QOS</kind><depth>1</depth></history>
+      </datareader_qos>
+    </qos_profile>
+
+    <!-- 헬스 모니터링: Writer는 0.5초 갱신을 약속, Reader는 1초까지 기다린다 -->
+    <qos_profile name="Health">
+      <datawriter_qos>
+        <reliability><kind>RELIABLE_RELIABILITY_QOS</kind></reliability>
+        <deadline><period><sec>0</sec><nanosec>500000000</nanosec></period></deadline>
+        <liveliness>
+          <kind>AUTOMATIC_LIVELINESS_QOS</kind>
+          <lease_duration><sec>2</sec><nanosec>0</nanosec></lease_duration>
+        </liveliness>
+      </datawriter_qos>
+      <datareader_qos>
+        <reliability><kind>RELIABLE_RELIABILITY_QOS</kind></reliability>
+        <deadline><period><sec>1</sec><nanosec>0</nanosec></period></deadline>
+        <liveliness>
+          <kind>AUTOMATIC_LIVELINESS_QOS</kind>
+          <lease_duration><sec>2</sec><nanosec>0</nanosec></lease_duration>
+        </liveliness>
+      </datareader_qos>
+    </qos_profile>
+
+    <!-- Failover: strength가 높은 Writer 하나만 보인다 -->
+    <qos_profile name="Failover">
+      <datawriter_qos>
+        <reliability><kind>RELIABLE_RELIABILITY_QOS</kind></reliability>
+        <ownership><kind>EXCLUSIVE_OWNERSHIP_QOS</kind></ownership>
+        <liveliness>
+          <kind>AUTOMATIC_LIVELINESS_QOS</kind>
+          <lease_duration><sec>1</sec><nanosec>0</nanosec></lease_duration>
+        </liveliness>
+      </datawriter_qos>
+      <datareader_qos>
+        <reliability><kind>RELIABLE_RELIABILITY_QOS</kind></reliability>
+        <ownership><kind>EXCLUSIVE_OWNERSHIP_QOS</kind></ownership>
+        <liveliness>
+          <kind>AUTOMATIC_LIVELINESS_QOS</kind>
+          <lease_duration><sec>1</sec><nanosec>0</nanosec></lease_duration>
+        </liveliness>
+      </datareader_qos>
+    </qos_profile>
+  </qos_library>
+
+  <!-- 2. Domain: 팀마다 domain_id를 다르게 하면 서로 안 보인다 -->
+  <domain_library name="Net">
+    <domain name="Class" domain_id="0">
+      <register_type name="TilePressure" type_ref="TilePressure"/>
+      <topic name="TilePressure" register_type_ref="TilePressure"/>
+    </domain>
+  </domain_library>
+
+  <!-- 3. Participant: Sensor = board_pub, Display = board_sub -->
+  <domain_participant_library name="Board">
+    <domain_participant name="Sensor" domain_ref="Net::Class">
+      <publisher name="pub">
+        <publisher_qos>
+          <partition><name><element>floor-1</element></name></partition>
+        </publisher_qos>
+        <data_writer name="tile" topic_ref="TilePressure">
+          <datawriter_qos base_name="Recipe::Basic">
+            <ownership_strength><value>100</value></ownership_strength>
+          </datawriter_qos>
+        </data_writer>
+      </publisher>
+    </domain_participant>
+
+    <domain_participant name="Display" domain_ref="Net::Class">
+      <subscriber name="sub">
+        <subscriber_qos>
+          <partition><name><element>floor-1</element></name></partition>
+        </subscriber_qos>
+        <data_reader name="tile" topic_ref="TilePressure">
+          <datareader_qos base_name="Recipe::Basic"/>
+        </data_reader>
+      </subscriber>
+    </domain_participant>
+  </domain_participant_library>
+</dds>

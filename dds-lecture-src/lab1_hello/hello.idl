@@ -1,6 +1,0 @@
-module demo {
-    struct HelloWorld {
-        long index;
-        string<128> message;
-    };
-};
