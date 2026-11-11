@@ -439,25 +439,27 @@ board_pub --config board/board.xml                                          # Se
 |---|---|
 | `./board_pub` | 4개 켜짐 0.80 |
 | `./board_pub --pressure 30` | 0.30 |
-| `./board_pub --dispose-after 5` | 5초 뒤 꺼짐 |
+| `./board_pub --dispose-after 10` | 10초 뒤 꺼짐 (보드에서는 붙는 데 약 5초가 걸려 5초로는 켜지기 전에 dispose될 수 있음) |
 | 실행 중 Ctrl+C | 바로 느린 깜빡 |
 | 실행 중 전원 뽑기 (`--crash-after 5`로 대신 가능) | 약 100초 동안 켜진 채, 그 뒤 느린 깜빡 (Participant lease) |
 
 **실습 4 · 보드**
 
 - Display의 `<subscriber_qos>` 안 `<element>`를 `floor-2`로 → `matched writers=0`. `floor-*`로 → 붙음. 와일드카드는 Display(Subscriber) 쪽에만 씁니다. int2DDS는 Publisher 쪽 와일드카드로 `*` 하나만 받습니다.
-- 한쪽 보드의 `domain_id`만 1로 → 서로 보이지 않음.
+- 한쪽 보드의 `domain_id`(79번째 줄)만 다른 팀이 쓰지 않는 번호로 → 서로 보이지 않음(`matched writers=0`).
+- 고칠 곳은 Display의 `<partition><name><element>floor-1</element></name></partition>`(103번째 줄)입니다. 고친 뒤 Display만 다시 실행합니다. 끝나면 `floor-1`과 팀 번호로 되돌립니다.
 
 **실습 7 · 보드** (`base_name`의 `Recipe::Basic`을 바꿈)
 
 | 단계 | 고칠 곳 | 실행 | 기대 LED |
 |---|---|---|---|
 | A · Late Joiner | 두 보드 모두 `Recipe::HardState` | Sensor `./board_pub --count 1`, 5초 뒤 Display | 4개 켜짐 (Basic이면 꺼진 채) |
-| B · 헬스 | 두 보드 모두 `Recipe::Health` | Display 먼저, Sensor `./board_pub --count 6` → 이어서 Sensor 전원 뽑기 | 쓰기가 멈추면 빠른 깜빡, 전원을 뽑으면 2초 뒤 느린 깜빡 |
-| C · Failover | 모두 `Recipe::Failover`, Sensor B만 `<ownership_strength><value>50</value>` | 보드 1: `./board_pub --pressure 100`, 보드 2: Display와 `./board_pub --pressure 30` → 보드 1 전원 뽑기 | 1초 뒤 1.00 → 0.30 |
-| D · 불일치 | Display의 `datareader_qos`만 `Recipe::HardState` | Display, Sensor | sub 로그 `REQUESTED_INCOMPATIBLE_QOS: last_policy=DURABILITY` |
+| B · 헬스 | 두 보드 모두 `Recipe::Health` | Display 먼저, Sensor `./board_pub --count 20 --crash-after 15` | 붙으면 켜짐 → 10초에 쓰기를 멈추면 1~2초 뒤 빠른 깜빡 → 15초에 정리 없이 종료하고 2초 뒤 느린 깜빡 |
 
-적용된 값은 시작 줄 `pub ready (board.xml): …`, `sub ready (board.xml): …`에서 확인합니다.
+- 고칠 곳은 Sensor의 `<datawriter_qos base_name="Recipe::Basic">`(93번째 줄)와 Display의 `<datareader_qos base_name="Recipe::Basic"/>`(106번째 줄)입니다. 보드에서는 `nano -l board.xml`로 엽니다(찾기 Ctrl+W, 저장 Ctrl+O Enter, 나가기 Ctrl+X).
+- 적용된 값은 시작 줄 `pub ready (board.xml): …`, `sub ready (board.xml): …`에서 확인합니다. A는 `durability=TransientLocal`, B는 pub `deadline=500ms lease=2000ms` · sub `deadline=1000ms lease=2000ms`입니다.
+- `--crash-after`는 전원을 뽑는 것을 대신합니다. 횟수와 시간을 넉넉히 둔 것은 보드에서 Sensor가 Display와 붙는 데 약 5초가 걸렸기 때문입니다(한 번 관찰). `Health`는 VOLATILE이라 붙기 전에 쓴 값은 전달되지 않습니다.
+- `Failover` 레시피는 이 실습에서 쓰지 않습니다. 통합 실습에서 EXCLUSIVE와 strength를 다룹니다.
 
 **통합 실습 (선택) · 정답 예시**: `Recipe`에 아래 프로파일을 더하고, 모든 보드의 `base_name`을 `Recipe::Field`로 바꿉니다(Sensor B만 strength 50).
 
