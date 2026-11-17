@@ -7,6 +7,10 @@ build/
 # Visual Studio "폴더 열기"의 CMake 출력
 out/
 
+# 강의 자료는 PDF로만 올린다. PPT 원본은 올리지 않는다.
+*.pptx
+*.ppt
+
 # Office 잠금 파일 (PPT를 열어 둔 동안 생긴다: ~$int2dds-lecture.pptx)
 ~$*
 
