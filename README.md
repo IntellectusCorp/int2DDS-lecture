@@ -32,7 +32,7 @@ int2DDS-lecture/
 | 2 | 6 · Topic · Key · Instance | 복합 키 타일의 Instance 생명주기 | `lab2_instance_lifecycle` |
 | 3 | 7 · Discovery | 발견된 Participant 확인 | `lab3_discovery` |
 | 4 | 8 · Domain과 Partition | Domain · Partition 격리 | `lab4_partition` |
-| 5 | 9 · 데이터 소비 | read/take, Listener, WaitSet | `lab5_data_receive` |
+| 5 | 9 · 데이터 수신 | read/take, Listener, WaitSet | `lab5_data_receive` |
 | 6 | 10 · QoS 프레임워크 | QoS 불일치와 런타임 변경 | `lab6_qos_compatibility` |
 | 7 | 11 · QoS 정책별 동작과 설정 | QoS 레시피 (Late Joiner, 헬스 모니터링, Failover, 데이터율 제한) | `lab7_qos_test` |
 | 8 | 12 · XML 활용 | XML로 타입 · QoS · 구성 정의 | `lab8_xml` |
